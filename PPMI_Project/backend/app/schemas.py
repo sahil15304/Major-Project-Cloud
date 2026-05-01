@@ -9,53 +9,83 @@ from typing import Optional
 
 class PredictionInput(BaseModel):
     """Input schema for severity predictions.
-    
-    Clinical features from UPDRS and cognitive assessment:
+
+    Clinical features from UPDRS and cognitive assessment and basic demographics:
+    - AGE: Patient age in years - Range: 0-120
+    - SEX: Sex encoded as 0/1 (0=female, 1=male)
     - NP1TOT: UPDRS Part I total (Mentation, Behavior, Mood) - Range: 0-16
     - NP2TOT: UPDRS Part II total (Activities of Daily Living) - Range: 0-52
     - NP3TOT: UPDRS Part III total (Motor Examination) - Range: 0-108
     - MCATOT: Montreal Cognitive Assessment total score - Range: 0-30
+    - SEVERITY: Current severity score
     """
-    
+
+    AGE: float = Field(
+        ...,
+        ge=0,
+        le=120,
+        description="Patient age in years"
+    )
+    SEX: float = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="Sex encoded as 0 (female) or 1 (male)"
+    )
     NP1TOT: float = Field(
-        ..., 
-        ge=0, 
+        ...,
+        ge=0,
         le=16,
         description="UPDRS Part I total score (0-16)"
     )
     NP2TOT: float = Field(
-        ..., 
-        ge=0, 
+        ...,
+        ge=0,
         le=52,
         description="UPDRS Part II total score (0-52)"
     )
     NP3TOT: float = Field(
-        ..., 
-        ge=0, 
+        ...,
+        ge=0,
         le=108,
         description="UPDRS Part III total score (0-108)"
     )
     MCATOT: float = Field(
-        ..., 
-        ge=0, 
+        ...,
+        ge=0,
         le=30,
         description="Montreal Cognitive Assessment score (0-30)"
     )
-    
+    SEVERITY: float = Field(
+        ...,
+        ge=0,
+        description="Current severity score"
+    )
+
     @validator('*')
     def check_no_nan(cls, v):
-        """Ensure no NaN values are submitted."""
+        """Ensure no missing values are submitted."""
         if v is None:
             raise ValueError("All fields are required")
         return v
-    
+
+    @validator('SEX')
+    def check_sex(cls, v):
+        """Ensure SEX is encoded as 0 or 1. Adjust if different encoding is used."""
+        if v not in (0, 1):
+            raise ValueError("SEX must be 0 or 1")
+        return v
+
     class Config:
         schema_extra = {
             "example": {
+                "AGE": 67,
+                "SEX": 1,
                 "NP1TOT": 5.0,
                 "NP2TOT": 15.0,
                 "NP3TOT": 35.0,
-                "MCATOT": 26.0
+                "MCATOT": 26.0,
+                "SEVERITY": 20.0
             }
         }
 

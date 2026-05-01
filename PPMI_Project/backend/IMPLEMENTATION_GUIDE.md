@@ -15,9 +15,8 @@ backend/
 │   ├── requirements.txt              # Python dependencies
 │   ├── .env.example                 # Environment template
 │   ├── .gitignore                   # Git exclusions
-│   ├── .dockerignore                # Docker exclusions
-│   ├── Dockerfile                   # Production container
-│   ├── docker-compose.yml           # Local dev compose
+│   ├── quickstart.sh                # Auto-setup (Linux/Mac)
+│   └── quickstart.ps1               # Auto-setup (Windows)
 │
 ├── 📚 Documentation (20+ pages)
 │   ├── README.md                    # Main guide (60KB)
@@ -245,44 +244,6 @@ curl http://localhost:8000/api/models/info
 
 ---
 
-## 🐳 Docker Deployment
-
-### **Build Docker Image:**
-```bash
-# Build
-docker build -t ppmi-api:latest .
-
-# Run
-docker run -p 8000:8000 \
-  -v $(pwd)/models:/app/models:ro \
-  -e LOCAL_MODELS_DIR=/app/models \
-  ppmi-api:latest
-```
-
-### **Using Docker Compose (Recommended for Local):**
-```bash
-# Start
-docker-compose up
-
-# Check status
-docker-compose ps
-
-# View logs
-docker-compose logs -f ppmi-api
-
-# Stop
-docker-compose down
-```
-
-### **Docker Benefits:**
-- ✅ No dependency installation needed
-- ✅ Consistent environment (dev/prod)
-- ✅ Easy deployment to AWS, GCP, Azure
-- ✅ Automatic health checks
-- ✅ Non-root user for security
-
----
-
 ## ☁️ AWS EC2 Deployment
 
 ### **Simple 5-Step Deployment:**
@@ -292,21 +253,21 @@ docker-compose down
 - AMI: Amazon Linux 2 or Ubuntu
 - Storage: 20GB
 
-**Step 2: Connect & Install Docker**
+**Step 2: Connect & Install Python**
 ```bash
 ssh -i your-key.pem ec2-user@your-ip
 sudo yum update -y
-sudo yum install docker -y
-sudo usermod -aG docker ec2-user
-sudo systemctl start docker
+sudo yum install python3 python3-pip -y
 ```
 
 **Step 3: Deploy Application**
 ```bash
 git clone your-repo.git
 cd backend
-docker build -t ppmi-api:latest .
-docker run -d -p 8000:8000 ppmi-api:latest
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+gunicorn -w 4 -b 0.0.0.0:8000 main:app
 ```
 
 **Step 4: Test**
@@ -496,10 +457,10 @@ LOGS_DIR=logs                        # Log files directory
 
 ### **Deployment:**
 ```
-1. Build Docker image: docker build -t ppmi-api:latest .
-2. Deploy to EC2: docker run -d -p 8000:8000 ppmi-api:latest
-3. Verify: curl http://your-ip:8000/api/health
-4. Monitor: Check logs and CloudWatch
+1. Create venv: python3 -m venv venv
+2. Install deps: source venv/bin/activate && pip install -r requirements.txt
+3. Start server: gunicorn -w 4 -b 0.0.0.0:8000 main:app
+4. Verify: curl http://your-ip:8000/api/health
 ```
 
 ---
@@ -511,7 +472,6 @@ LOGS_DIR=logs                        # Log files directory
 | Models not found | Wrong path | Check `LOCAL_MODELS_DIR` path |
 | Port 8000 in use | Another app using it | Kill process: `lsof -i :8000` |
 | Import errors | Missing deps | `pip install -r requirements.txt` |
-| Docker build fails | Missing base image | `docker system prune -a` |
 | API not responding | Models not loaded | Check `/api/health` endpoint |
 | Validation errors | Invalid input | Check ranges in API_DOCUMENTATION.md |
 
@@ -523,7 +483,7 @@ LOGS_DIR=logs                        # Log files directory
 - [ ] Health check working: `curl http://localhost:8000/api/health`
 - [ ] Predictions working: Use Swagger UI at `/docs`
 - [ ] Logs generated: Check `logs/` directory
-- [ ] Docker builds successfully: `docker build -t ppmi-api:latest .`
+- [ ] Virtual environment working: `source venv/bin/activate`
 - [ ] Environment configured: `.env` file created
 - [ ] Documentation reviewed: README.md and API_DOCUMENTATION.md
 - [ ] Security checked: No hardcoded credentials
@@ -542,7 +502,6 @@ Your production-ready backend is complete and tested. You can now:
 - Run unit tests with pytest
 
 ### **For Deployment:**
-- Deploy locally with Docker Compose
 - Deploy to AWS EC2 using provided guide
 - Scale with load balancer and auto-scaling
 
@@ -571,9 +530,7 @@ Your production-ready backend is complete and tested. You can now:
 3. ✅ Review [README.md](README.md) for deployment options
 4. ✅ Choose deployment method:
    - Local development
-   - Docker local
    - AWS EC2
-   - Cloud platform of choice
 5. ✅ Deploy and monitor
 
 ---
@@ -592,14 +549,12 @@ Your production-ready backend is complete and tested. You can now:
 - ✅ XGBoost model integration
 - ✅ Comprehensive API documentation
 - ✅ Unit tests and examples
-- ✅ Docker containerization
 - ✅ AWS deployment guide
 - ✅ Quick start scripts
 - ✅ Production-ready code
 
 **What You Can Do:**
 - ✅ Run locally for testing
-- ✅ Deploy with Docker
 - ✅ Deploy to AWS EC2
 - ✅ Scale horizontally
 - ✅ Monitor and log

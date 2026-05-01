@@ -13,6 +13,7 @@ from app.config import settings
 from app.models import ModelManager
 from app.utils.logger import setup_logging, get_logger
 from app.routes import predict
+import os
 
 # Setup logging
 logger_instance = setup_logging(log_dir=settings.LOGS_DIR, log_level=settings.LOG_LEVEL)
@@ -58,15 +59,23 @@ async def startup_event():
         settings.validate()
         logger.info("✓ Configuration validated")
         
-        # Initialize model manager
-        models_dir = settings.LOCAL_MODELS_DIR
-        logger.info(f"Loading models from: {models_dir}")
-        
-        model_manager = ModelManager(models_dir)
-        model_manager.load_all_models()
-        
-        # Set the model manager in routes
-        predict.set_model_manager(model_manager)
+        # Optionally skip model loading in local dev to avoid heavy ML deps.
+        skip_models = os.getenv("PPMI_SKIP_MODEL_LOAD", "0") in ("1", "true", "True")
+
+        if skip_models:
+            logger.warning("PPMI_SKIP_MODEL_LOAD is set — skipping model initialization (dev mode).")
+            model_manager = None
+            predict.set_model_manager(None)
+        else:
+            # Initialize model manager
+            models_dir = settings.LOCAL_MODELS_DIR
+            logger.info(f"Loading models from: {models_dir}")
+
+            model_manager = ModelManager(models_dir)
+            model_manager.load_all_models()
+
+            # Set the model manager in routes
+            predict.set_model_manager(model_manager)
         
         logger.info("✓ All startup tasks completed successfully")
         logger.info("=" * 60)

@@ -6,11 +6,14 @@ Handles all HTTP endpoints.
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from app.schemas import PredictionInput, SeverityPrediction, HealthStatus, ErrorResponse
-from app.models import ModelManager
 from app.utils.logger import get_logger
+
+# Import ModelManager only for type checking to avoid heavy runtime imports
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from app.models import ModelManager
 
 logger = get_logger(__name__)
 
@@ -18,10 +21,10 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api", tags=["predictions"])
 
 # Global model manager (will be initialized in main.py)
-model_manager: Optional[ModelManager] = None
+model_manager: Optional["ModelManager"] = None
 
 
-def set_model_manager(mm: ModelManager) -> None:
+def set_model_manager(mm) -> None:
     """Set the global model manager instance."""
     global model_manager
     model_manager = mm
@@ -92,20 +95,44 @@ async def predict(patient_data: PredictionInput) -> SeverityPrediction:
                 detail="Models not loaded. Service unavailable."
             )
         
-        # Prepare features in correct order
+        # Prepare features in the exact order expected by the trained models.
+        # Keep this order in sync with model training metadata.
+        expected_order = ['AGE', 'SEX', 'NP1TOT', 'NP2TOT', 'NP3TOT', 'MCATOT', 'SEVERITY']
+
         features = [
+            patient_data.AGE,
+            patient_data.SEX,
             patient_data.NP1TOT,
             patient_data.NP2TOT,
             patient_data.NP3TOT,
-            patient_data.MCATOT
+            patient_data.MCATOT,
+            patient_data.SEVERITY,
         ]
-        
-        logger.info(f"Processing prediction request with features: {features}")
-        
-        # Make predictions using all three models
-        severity_6m = model_manager.predict('severity_6m', features)
-        severity_12m = model_manager.predict('severity_12m', features)
-        severity_24m = model_manager.predict('severity_24m', features)
+
+        logger.info(f"Incoming features: {features}")
+
+        # Validate the constructed feature vector length
+        if len(features) != 7:
+            logger.error(
+                "Feature vector length mismatch: expected %d, got %d",
+                7, len(features)
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid feature length"
+            )
+
+        # Make predictions using the loaded models and handle errors cleanly
+        try:
+            severity_6m = model_manager.predict('severity_6m', features)
+            severity_12m = model_manager.predict('severity_12m', features)
+            severity_24m = model_manager.predict('severity_24m', features)
+        except Exception as pred_err:
+            logger.error("Model prediction failed: %s", str(pred_err), exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Prediction failed: {str(pred_err)}"
+            )
         
         logger.info(
             f"Predictions generated - 6m: {severity_6m:.2f}, "
@@ -124,6 +151,9 @@ async def predict(patient_data: PredictionInput) -> SeverityPrediction:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid input: {str(e)}"
         )
+    except HTTPException:
+        # Re-raise HTTPExceptions so FastAPI can handle them with their status codes
+        raise
     except Exception as e:
         logger.error(f"Prediction error: {e}", exc_info=True)
         raise HTTPException(

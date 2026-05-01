@@ -13,11 +13,10 @@ A production-ready FastAPI backend system for Parkinson's disease severity predi
 - **Logging** (`app/utils/logger.py`) - Structured application logging
 
 ### ✅ Deployment & Infrastructure
-- **Docker** (`Dockerfile`) - Multi-stage container for production
-- **Docker Compose** (`docker-compose.yml`) - Local development setup
 - **Requirements** (`requirements.txt`) - All Python dependencies
 - **Environment Template** (`.env.example`) - Configuration reference
 - **.gitignore** - Source control exclusions
+- **Quick Start Scripts** - Automated setup (bash + PowerShell)
 
 ### ✅ Documentation
 - **README.md** - Comprehensive setup and deployment guide (60+ KB)
@@ -59,10 +58,7 @@ backend/
 ├── main.py                  # Entry point wrapper
 ├── requirements.txt         # Dependencies
 ├── .env.example             # Configuration template
-├── Dockerfile               # Container image
-├── docker-compose.yml       # Local dev container
 ├── .gitignore               # Git exclusions
-├── .dockerignore            # Docker exclusions
 ├── README.md                # Main documentation
 ├── AWS_DEPLOYMENT_GUIDE.md  # AWS setup instructions
 ├── API_DOCUMENTATION.md     # API reference
@@ -137,28 +133,6 @@ curl -X POST http://localhost:8000/api/predict \
 
 ---
 
-## 🐳 Docker Deployment
-
-### Local Testing with Docker:
-```bash
-# Build image
-docker build -t ppmi-api:latest .
-
-# Run container
-docker run -p 8000:8000 \
-  -v $(pwd)/models:/app/models:ro \
-  ppmi-api:latest
-
-# Or use docker-compose (easier)
-docker-compose up
-```
-
-### Access:
-- API: http://localhost:8000
-- Swagger: http://localhost:8000/docs
-
----
-
 ## ☁️ AWS EC2 Deployment
 
 ### Quick Deployment Steps:
@@ -171,17 +145,18 @@ docker-compose up
    ```bash
    ssh -i your-key.pem ec2-user@your-instance-ip
    sudo yum update -y
-   sudo yum install docker -y
-   sudo usermod -aG docker ec2-user
-   sudo systemctl start docker
+   sudo yum install python3.11 -y
+   sudo yum install gcc python3-devel -y
    ```
 
 3. **Deploy Application**
    ```bash
    git clone your-repo.git
    cd backend
-   docker build -t ppmi-api:latest .
-   docker run -d -p 8000:8000 ppmi-api:latest
+   python3.11 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   gunicorn -w 4 -b 0.0.0.0:8000 main:app
    ```
 
 4. **Access**
@@ -223,7 +198,6 @@ docker-compose up
 
 ✅ **AWS-Ready**
 - Environment-based configuration
-- Docker containerization
 - Support for S3 model loading (optional)
 - IAM role support for EC2
 
@@ -367,8 +341,8 @@ curl http://localhost:8000/api/health
 
 ### Deployment:
 ```
-1. Build Docker image
-2. Push to registry (if needed)
+1. Set up Python environment
+2. Install dependencies
 3. Deploy to EC2/AWS
 4. Verify health endpoint
 5. Monitor logs
@@ -410,13 +384,6 @@ kill -9 <PID>
 pip install -r requirements.txt
 ```
 
-### Issue: Docker Build Fails
-**Solution:** Clear cache and rebuild
-```bash
-docker system prune -a
-docker build --no-cache -t ppmi-api:latest .
-```
-
 ---
 
 ## 📞 Support & Next Steps
@@ -446,7 +413,7 @@ docker build --no-cache -t ppmi-api:latest .
 ✅ **Input Validation** - Pydantic schema validation  
 ✅ **Logging** - Structured application logging  
 ✅ **Error Handling** - Comprehensive error responses  
-✅ **Docker** - Production-ready containerization  
+✅ **Production Ready** - AWS EC2 deployment guide included  
 ✅ **Tests** - Unit tests with pytest  
 ✅ **Documentation** - 20+ pages of guides  
 ✅ **Quick Start** - Automated setup scripts  
@@ -459,7 +426,7 @@ docker build --no-cache -t ppmi-api:latest .
 - [ ] Models placed in correct directory
 - [ ] Environment variables configured
 - [ ] Dependencies installed (pip install -r requirements.txt)
-- [ ] Application started (python main.py or docker run)
+- [ ] Application started (python main.py or gunicorn)
 - [ ] Health check endpoint responding (http://server:8000/api/health)
 - [ ] Predictions working (test with /docs or curl)
 - [ ] Logs being generated and accessible
@@ -475,8 +442,7 @@ docker build --no-cache -t ppmi-api:latest .
 Your production-ready backend system is complete. You can now:
 
 1. **Deploy locally** - Use quickstart scripts to test
-2. **Deploy to Docker** - Build and run containerized version
-3. **Deploy to AWS** - Follow AWS_DEPLOYMENT_GUIDE.md
+2. **Deploy to AWS** - Follow AWS_DEPLOYMENT_GUIDE.md for EC2 deployment
 
 The system is designed for academic use and production deployment. It's clean, well-documented, and ready for review or deployment.
 

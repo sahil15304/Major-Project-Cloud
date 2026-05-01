@@ -54,51 +54,62 @@ ssh -i your-key.pem ec2-user@your-instance-ip
 # Update system
 sudo yum update -y
 
-# Install Docker (recommended)
-sudo yum install docker -y
-sudo usermod -aG docker ec2-user
-sudo systemctl start docker
+# Install Python and build tools
+sudo yum install python3 python3-pip -y
+sudo yum install gcc python3-devel -y
 ```
 
 ### Step 3: Deploy Application
-
-**Option A: Using Docker (Recommended)**
 
 ```bash
 # Clone repository
 git clone https://your-repo.git
 cd backend
 
-# Build image
-docker build -t ppmi-api:latest .
-
-# Run container
-docker run -d \
-  --name ppmi-api \
-  -p 8000:8000 \
-  -v /home/ec2-user/models:/app/models:ro \
-  -e LOCAL_MODELS_DIR=/app/models \
-  ppmi-api:latest
-
-# Check logs
-docker logs -f ppmi-api
-```
-
-**Option B: Direct Python**
-
-```bash
-# Install Python and dependencies
-sudo yum install python3 python3-pip -y
-cd /opt
-git clone https://your-repo.git ppmi-backend
-cd ppmi-backend/backend
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Create systemd service (see README.md)
+# Start server with gunicorn
+gunicorn -w 4 -b 0.0.0.0:8000 main:app
+```
+
+### Step 4: Setup Systemd Service (For Production)
+
+For production deployments, use systemd to automatically restart the API:
+
+```bash
+sudo nano /etc/systemd/system/ppmi-api.service
+```
+
+Paste:
+```ini
+[Unit]
+Description=PPMI Parkinson API
+After=network.target
+
+[Service]
+Type=notify
+User=ec2-user
+WorkingDirectory=/opt/ppmi-backend/backend
+Environment="PATH=/opt/ppmi-backend/backend/venv/bin"
+ExecStart=/opt/ppmi-backend/backend/venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+```bash
+sudo systemctl daemon-reload
 sudo systemctl enable ppmi-api
 sudo systemctl start ppmi-api
+sudo systemctl status ppmi-api
 ```
 
 ## S3 Model Storage
@@ -137,8 +148,6 @@ aws s3 ls s3://ppmi-models-prod/models/
 
 3. **Restart Application**
    ```bash
-   docker restart ppmi-api
-   # or
    sudo systemctl restart ppmi-api
    ```
 
@@ -371,7 +380,7 @@ Monitor key metrics:
 - [ ] EC2 instance launched
 - [ ] Security groups configured
 - [ ] IAM role created and attached
-- [ ] Application deployed (Docker or Python)
+- [ ] Application deployed (Python with venv)
 - [ ] Models uploaded to S3 (if applicable)
 - [ ] Load Balancer configured
 - [ ] Auto-scaling groups created
@@ -396,9 +405,6 @@ aws ec2 describe-instance-status --instance-ids i-xxxxxxxx
 
 ### Application Not Starting
 ```bash
-# Check Docker logs
-docker logs ppmi-api
-
 # Check systemd service
 sudo systemctl status ppmi-api
 sudo journalctl -u ppmi-api -f
@@ -413,7 +419,7 @@ aws s3 ls s3://ppmi-models-prod/models/
 aws iam get-role --role-name ec2-ppmi-role
 
 # Verify environment variables
-docker exec ppmi-api env | grep AWS
+env | grep AWS
 ```
 
 ### Health Check Failing
@@ -422,7 +428,7 @@ docker exec ppmi-api env | grep AWS
 curl http://localhost:8000/api/health
 
 # Check API logs
-docker logs ppmi-api | tail -50
+sudo journalctl -u ppmi-api -f | tail -50
 ```
 
 ## Additional Resources
