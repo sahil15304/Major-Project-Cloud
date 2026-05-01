@@ -1,0 +1,29 @@
+# FastAPI and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# ML and data
+xgboost==2.0.3
+joblib==1.3.2
+numpy==1.26.2
+scikit-learn==1.3.2
+
+# AWS support (optional - uncomment if deploying to AWS)
+# boto3==1.29.7
+
+# Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Utilities
+python-dotenv==1.0.0
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Optional: for production deployment
+# gunicorn==21.2.0
+# python-json-logger==2.0.7
