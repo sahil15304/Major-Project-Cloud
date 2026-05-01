@@ -94,10 +94,12 @@ async def predict(patient_data: PredictionInput) -> SeverityPrediction:
         
         # Prepare features in correct order
         features = [
-            patient_data.NP1TOT,
-            patient_data.NP2TOT,
-            patient_data.NP3TOT,
-            patient_data.MCATOT
+                patient_data.AGE,
+                patient_data.SEX,
+                patient_data.NP1TOT,
+                patient_data.NP2TOT,
+                patient_data.NP3TOT,
+                patient_data.MCATOT
         ]
         
         logger.info(f"Processing prediction request with features: {features}")

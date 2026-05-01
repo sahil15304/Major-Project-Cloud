@@ -41,6 +41,18 @@ class PredictionInput(BaseModel):
         le=30,
         description="Montreal Cognitive Assessment score (0-30)"
     )
+        AGE: float = Field(
+            ...,
+            ge=0,
+            le=120,
+            description="Age in years (0-120)"
+        )
+        SEX: int = Field(
+            ...,
+            ge=0,
+            le=1,
+            description="Biological sex (0=Female, 1=Male)"
+        )
     
     @validator('*')
     def check_no_nan(cls, v):
@@ -56,6 +68,8 @@ class PredictionInput(BaseModel):
                 "NP2TOT": 15.0,
                 "NP3TOT": 35.0,
                 "MCATOT": 26.0
+                    "AGE": 68.0,
+                    "SEX": 1
             }
         }
 
