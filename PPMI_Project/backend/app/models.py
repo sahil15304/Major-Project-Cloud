@@ -13,6 +13,8 @@ import json
 
 logger = logging.getLogger(__name__)
 
+DEPLOYMENT_MODELS_DIR = Path("/home/ubuntu/Major-Project-Cloud/PPMI_Project/models")
+
 
 class ModelManager:
     """Manages loading and caching of pre-trained XGBoost models."""
@@ -24,7 +26,13 @@ class ModelManager:
         Args:
             models_dir: Directory containing the .joblib model files
         """
-        self.models_dir = Path(models_dir)
+        configured_dir = Path(models_dir)
+        if configured_dir.exists():
+            self.models_dir = configured_dir
+        elif DEPLOYMENT_MODELS_DIR.exists():
+            self.models_dir = DEPLOYMENT_MODELS_DIR
+        else:
+            self.models_dir = configured_dir
         self.models = {}
         self.model_metadata = {}
         self.is_loaded = False
@@ -42,9 +50,9 @@ class ModelManager:
         """
         try:
             model_files = {
-                'severity_6m': 'xgb_sev_6m.joblib',
-                'severity_12m': 'xgb_sev_12m.joblib',
-                'severity_24m': 'xgb_sev_24m.joblib'
+                'severity_6m': 'severity_6m.pkl',
+                'severity_12m': 'severity_12m.pkl',
+                'severity_24m': 'severity_24m.pkl'
             }
             
             for model_name, filename in model_files.items():

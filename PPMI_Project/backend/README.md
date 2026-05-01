@@ -29,7 +29,6 @@ This FastAPI-based service exposes three pre-trained machine learning models tha
 - Environment-based configuration
 - Support for S3 model loading (optional)
 - IAM role support for EC2 authentication
-- Docker containerization
 
 ✅ **Developer-Friendly**
 - Automatic API documentation (Swagger/OpenAPI)
@@ -59,8 +58,6 @@ backend/
 ├── main.py                     # Entry point (wrapper)
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Environment template
-├── Dockerfile                  # Container image
-├── docker-compose.yml          # Local development compose
 ├── README.md                   # This file
 └── .gitignore
 ```
@@ -214,37 +211,6 @@ pytest tests/test_api.py::TestPredictionEndpoint::test_valid_prediction -v
 pytest tests/test_api.py --cov=app --cov-report=html
 ```
 
-## Docker Deployment
-
-### Local Docker Testing
-
-```bash
-# Build Docker image
-docker build -t ppmi-api:latest .
-
-# Run container
-docker run -p 8000:8000 \
-  -v $(pwd)/models:/app/models:ro \
-  -e LOCAL_MODELS_DIR=/app/models \
-  ppmi-api:latest
-
-# Or using docker-compose
-docker-compose up
-```
-
-### Docker Compose (Recommended for Local)
-
-```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f ppmi-api
-
-# Stop services
-docker-compose down
-```
-
 ## AWS EC2 Deployment
 
 ### Prerequisites
@@ -255,60 +221,6 @@ docker-compose down
 - SSH access configured
 
 ### Deployment Steps
-
-#### Option 1: Docker on EC2 (Recommended)
-
-1. **Connect to EC2 instance**
-```bash
-ssh -i your-key.pem ec2-user@your-instance-ip
-```
-
-2. **Install Docker**
-```bash
-# Amazon Linux 2
-sudo yum update -y
-sudo yum install docker -y
-sudo usermod -aG docker ec2-user
-sudo systemctl start docker
-
-# Ubuntu
-sudo apt update
-sudo apt install docker.io -y
-sudo usermod -aG docker ubuntu
-sudo systemctl start docker
-```
-
-3. **Clone/Upload project**
-```bash
-git clone your-repo.git
-cd backend
-```
-
-4. **Create environment file**
-```bash
-cp .env.example .env
-
-# Edit for your AWS setup
-nano .env
-# Set:
-# MODELS_SOURCE=local (or s3)
-# LOCAL_MODELS_DIR=/app/models
-# AWS_REGION=us-east-1 (if using S3)
-```
-
-5. **Build and run with Docker**
-```bash
-docker build -t ppmi-api:latest .
-
-docker run -d \
-  --name ppmi-api \
-  -p 8000:8000 \
-  -v /path/to/models:/app/models:ro \
-  -e LOCAL_MODELS_DIR=/app/models \
-  ppmi-api:latest
-```
-
-#### Option 2: Direct Python on EC2
 
 1. **Connect to EC2 and install dependencies**
 ```bash
@@ -636,7 +548,6 @@ To update models:
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [XGBoost Documentation](https://xgboost.readthedocs.io/)
 - [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
-- [Docker Documentation](https://docs.docker.com/)
 
 ## License
 
