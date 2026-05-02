@@ -9,7 +9,7 @@ function ResultCard({ label, value }) {
   );
 }
 
-export default function PredictionResults({ prediction, loading }) {
+export default function PredictionResults({ prediction, loading, storage }) {
   if (loading) {
     return (
       <div className="empty-state">
@@ -44,6 +44,8 @@ export default function PredictionResults({ prediction, loading }) {
         <ResultCard label="12 months" value={prediction.severity_12m.toFixed(2)} />
         <ResultCard label="24 months" value={prediction.severity_24m.toFixed(2)} />
       </div>
+
+      {/* Intentionally hide storage metadata for a clean, formal UI */}
     </div>
   );
 }

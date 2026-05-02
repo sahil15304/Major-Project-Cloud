@@ -8,12 +8,12 @@ import joblib
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict
 import json
 
 logger = logging.getLogger(__name__)
 
-DEPLOYMENT_MODELS_DIR = Path("/home/ubuntu/Major-Project-Cloud/PPMI_Project/models")
+DEFAULT_MODELS_DIR = Path("/home/ubuntu/Major-Project-Cloud/PPMI_Project/models")
 
 
 class ModelManager:
@@ -27,12 +27,18 @@ class ModelManager:
             models_dir: Directory containing the .joblib model files
         """
         configured_dir = Path(models_dir)
-        if configured_dir.exists():
+        env_models_dir = os.getenv("MODEL_PATH")
+
+        # Resolution order:
+        # 1) Explicit MODEL_PATH override
+        # 2) Configured LOCAL_MODELS_DIR
+        # 3) Deployment fallback path
+        if env_models_dir:
+            self.models_dir = Path(env_models_dir)
+        elif configured_dir.exists():
             self.models_dir = configured_dir
-        elif DEPLOYMENT_MODELS_DIR.exists():
-            self.models_dir = DEPLOYMENT_MODELS_DIR
         else:
-            self.models_dir = configured_dir
+            self.models_dir = DEFAULT_MODELS_DIR
         self.models = {}
         self.model_metadata = {}
         self.is_loaded = False
@@ -91,7 +97,7 @@ class ModelManager:
         
         Args:
             model_name: Name of the model ('severity_6m', 'severity_12m', 'severity_24m')
-            features: List of features in order [NP1TOT, NP2TOT, NP3TOT, MCATOT]
+            features: List of features in order [AGE, SEX, NP1TOT, NP2TOT, NP3TOT, MCATOT, SEVERITY]
             
         Returns:
             float: Predicted severity value
@@ -107,7 +113,7 @@ class ModelManager:
             raise ValueError(f"Model '{model_name}' not found. Available models: {list(self.models.keys())}")
         
         try:
-            # Reshape features for sklearn format: [[feature1, feature2, feature3, feature4]]
+            # Reshape features for sklearn format: [[feature1, feature2, ...]]
             prediction = self.models[model_name].predict([features])[0]
             return float(prediction)
         except Exception as e:

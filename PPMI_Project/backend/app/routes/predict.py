@@ -30,6 +30,69 @@ def set_model_manager(mm) -> None:
     model_manager = mm
 
 
+def run_prediction_for_input(patient_data: PredictionInput) -> SeverityPrediction:
+    """Run prediction for validated input using loaded models."""
+    if model_manager is None or not model_manager.is_loaded:
+        logger.error("Model manager not initialized or models not loaded")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Models not loaded. Service unavailable."
+        )
+
+    expected_order = ['AGE', 'SEX', 'NP1TOT', 'NP2TOT', 'NP3TOT', 'MCATOT', 'SEVERITY']
+    features = [
+        patient_data.AGE,
+        patient_data.SEX,
+        patient_data.NP1TOT,
+        patient_data.NP2TOT,
+        patient_data.NP3TOT,
+        patient_data.MCATOT,
+        patient_data.SEVERITY,
+    ]
+
+    logger.info("Incoming features: %s", features)
+
+    if len(features) != len(expected_order):
+        logger.error(
+            "Feature vector length mismatch: expected %d, got %d",
+            len(expected_order), len(features)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid feature count"
+        )
+
+    try:
+        severity_6m = model_manager.predict('severity_6m', features)
+        severity_12m = model_manager.predict('severity_12m', features)
+        severity_24m = model_manager.predict('severity_24m', features)
+    except Exception as pred_err:
+        logger.error("Model prediction failed: %s", str(pred_err), exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Prediction failed: {str(pred_err)}"
+        )
+
+    # Keep the horizon outputs monotonic for severity progression.
+    # The separate models can produce slight decreases, but the clinical rule here
+    # is that later time horizons should not be lower than earlier ones.
+    severity_12m = max(severity_6m, severity_12m)
+    severity_24m = max(severity_12m, severity_24m)
+
+    logger.info(
+        "Predictions generated - 6m: %.2f, 12m: %.2f, 24m: %.2f",
+        severity_6m,
+        severity_12m,
+        severity_24m,
+    )
+
+    return SeverityPrediction(
+        severity_6m=severity_6m,
+        severity_12m=severity_12m,
+        severity_24m=severity_24m,
+    )
+
+
 @router.get("/health", response_model=HealthStatus)
 async def health_check():
     """
@@ -88,63 +151,7 @@ async def predict(patient_data: PredictionInput) -> SeverityPrediction:
         HTTPException: If prediction fails
     """
     try:
-        if model_manager is None or not model_manager.is_loaded:
-            logger.error("Model manager not initialized or models not loaded")
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Models not loaded. Service unavailable."
-            )
-        
-        # Prepare features in the exact order expected by the trained models.
-        # Keep this order in sync with model training metadata.
-        expected_order = ['AGE', 'SEX', 'NP1TOT', 'NP2TOT', 'NP3TOT', 'MCATOT', 'SEVERITY']
-
-        features = [
-            patient_data.AGE,
-            patient_data.SEX,
-            patient_data.NP1TOT,
-            patient_data.NP2TOT,
-            patient_data.NP3TOT,
-            patient_data.MCATOT,
-            patient_data.SEVERITY,
-        ]
-
-        logger.info(f"Incoming features: {features}")
-
-        # Validate the constructed feature vector length
-        if len(features) != 7:
-            logger.error(
-                "Feature vector length mismatch: expected %d, got %d",
-                7, len(features)
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid feature length"
-            )
-
-        # Make predictions using the loaded models and handle errors cleanly
-        try:
-            severity_6m = model_manager.predict('severity_6m', features)
-            severity_12m = model_manager.predict('severity_12m', features)
-            severity_24m = model_manager.predict('severity_24m', features)
-        except Exception as pred_err:
-            logger.error("Model prediction failed: %s", str(pred_err), exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Prediction failed: {str(pred_err)}"
-            )
-        
-        logger.info(
-            f"Predictions generated - 6m: {severity_6m:.2f}, "
-            f"12m: {severity_12m:.2f}, 24m: {severity_24m:.2f}"
-        )
-        
-        return SeverityPrediction(
-            severity_6m=severity_6m,
-            severity_12m=severity_12m,
-            severity_24m=severity_24m
-        )
-        
+        return run_prediction_for_input(patient_data)
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
         raise HTTPException(

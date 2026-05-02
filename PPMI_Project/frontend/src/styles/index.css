@@ -117,10 +117,44 @@ h1 {
   display: block;
 }
 
+.meta-chip.compact {
+  padding: 10px 12px;
+}
+
 .meta-chip span,
 .muted,
 .helper {
   color: var(--muted);
+}
+
+.connection-form {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.connection-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.connection-form input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.connection-form input:focus {
+  border-color: rgba(20, 184, 166, 0.8);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12);
 }
 
 .content-grid {

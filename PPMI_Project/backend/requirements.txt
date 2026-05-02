@@ -10,7 +10,7 @@ numpy==1.26.2
 scikit-learn==1.3.2
 
 # AWS support (optional - uncomment if deploying to AWS)
-# boto3==1.29.7
+boto3==1.29.7
 
 # Validation
 pydantic==2.5.0

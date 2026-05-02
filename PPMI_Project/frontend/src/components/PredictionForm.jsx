@@ -21,25 +21,39 @@ export default function PredictionForm({ values, onChange, onSubmit, loading }) 
       </div>
 
       <div className="field-grid">
-        {REQUIRED_FIELDS.map((field) => (
-          <label key={field.name} className="field">
-            <span>
-              {field.label}
-              <small>{field.min} to {field.max}</small>
-            </span>
-            <input
-              type="number"
-              name={field.name}
-              value={values[field.name]}
-              min={field.min}
-              max={field.max}
-              step="0.01"
-              onChange={onChange}
-              placeholder={`${field.min} - ${field.max}`}
-            />
-            <small className="helper">{field.helper}</small>
-          </label>
-        ))}
+        {REQUIRED_FIELDS.map((field) => {
+          if (field.name === 'SEVERITY') {
+            return (
+              <input
+                key={field.name}
+                type="hidden"
+                name={field.name}
+                value={1}
+                readOnly
+              />
+            );
+          }
+
+          return (
+            <label key={field.name} className="field">
+              <span>
+                {field.label}
+                <small>{field.min} to {field.max}</small>
+              </span>
+              <input
+                type="number"
+                name={field.name}
+                value={values[field.name]}
+                min={field.min}
+                max={field.max}
+                step="0.01"
+                onChange={onChange}
+                placeholder={`${field.min} - ${field.max}`}
+              />
+              <small className="helper">{field.helper}</small>
+            </label>
+          );
+        })}
       </div>
 
       <div className="button-row">

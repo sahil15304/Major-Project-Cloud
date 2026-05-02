@@ -305,6 +305,37 @@ export AWS_REGION=us-east-1
 export USE_IAM_ROLE=True
 ```
 
+### Uploading Evaluation Graphs to S3
+
+After generating the plots in `eval/` and `interpretability/`, upload them with:
+
+```bash
+python scripts/upload_evaluation_artifacts.py
+```
+
+This pushes PNG files from:
+- `eval/`
+- `interpretability/`
+
+to the S3 prefix defined by `AWS_S3_ARTIFACTS_PREFIX` (default: `artifacts/`).
+
+Example environment settings:
+
+```bash
+export AWS_S3_BUCKET=parkinson-ml-data-roshan
+export AWS_S3_ARTIFACTS_PREFIX=artifacts/
+export AWS_REGION=us-east-1
+export USE_IAM_ROLE=True
+```
+
+If you are not using an EC2 IAM role, set credentials locally in your shell or local `.env` file and keep them out of git:
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...  # optional
+```
+
 ### Setting Up Reverse Proxy (nginx)
 
 For production, use nginx as reverse proxy:

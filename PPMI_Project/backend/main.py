@@ -13,6 +13,7 @@ from app.config import settings
 from app.models import ModelManager
 from app.utils.logger import setup_logging, get_logger
 from app.routes import predict
+from app.routes import data_ingest
 import os
 
 # Setup logging
@@ -123,6 +124,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Include routers
 app.include_router(predict.router)
+app.include_router(data_ingest.router)
 
 
 # Root endpoint

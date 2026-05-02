@@ -35,6 +35,7 @@ class Settings:
     # AWS S3 settings (only used if MODELS_SOURCE="s3")
     AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET", "")
     AWS_S3_MODELS_PREFIX = os.getenv("AWS_S3_MODELS_PREFIX", "models/")
+    AWS_S3_ARTIFACTS_PREFIX = os.getenv("AWS_S3_ARTIFACTS_PREFIX", "artifacts/")
     AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
     
     # IAM Role (for EC2 - no credentials needed)
@@ -75,6 +76,8 @@ class Settings:
         elif cls.MODELS_SOURCE == "s3":
             if not cls.AWS_S3_BUCKET:
                 raise ValueError("AWS_S3_BUCKET must be set when MODELS_SOURCE='s3'")
+            if not cls.AWS_S3_ARTIFACTS_PREFIX:
+                raise ValueError("AWS_S3_ARTIFACTS_PREFIX must be set when using S3 artifacts")
         else:
             raise ValueError(
                 f"Invalid MODELS_SOURCE: {cls.MODELS_SOURCE}. Use 'local' or 's3'"
@@ -99,6 +102,7 @@ class Settings:
             "port": cls.PORT,
             "models_source": cls.MODELS_SOURCE,
             "models_dir": cls.get_models_dir(),
+            "aws_s3_artifacts_prefix": cls.AWS_S3_ARTIFACTS_PREFIX if cls.MODELS_SOURCE == "s3" else None,
             "aws_region": cls.AWS_REGION if cls.MODELS_SOURCE == "s3" else None,
             "use_iam_role": cls.USE_IAM_ROLE
         }
